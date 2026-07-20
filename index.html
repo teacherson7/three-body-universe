@@ -860,12 +860,23 @@ for(let i=0;i<N;i++){
   h0[i]=.53+Math.random()*.17;
   l0[i]=.5+Math.random()*.35;
 }
+/* 별 색은 초기 1회만 기록 (iOS 사파리의 버퍼 갱신 문제 회피) */
+const initC=new THREE.Color();
+for(let i=0;i<N;i++){
+  initC.setHSL(h0[i],.65,l0[i]);
+  col[i*3]=initC.r;col[i*3+1]=initC.g;col[i*3+2]=initC.b;
+}
 const starGeo=new THREE.BufferGeometry();
 starGeo.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
-starGeo.setAttribute('color',new THREE.BufferAttribute(col,3).setUsage(THREE.DynamicDrawUsage));
-const starMat=new THREE.PointsMaterial({size:1.9,map:dotTex,vertexColors:true,
+starGeo.setAttribute('color',new THREE.BufferAttribute(col,3));
+/* 평상시(청백) 별판 + 10차원 금빛 별판 — 투명도 크로스페이드 */
+const dotTexGold=glowTex('rgba(255,240,200,1)','rgba(255,185,90,.45)');
+const starMatCool=new THREE.PointsMaterial({size:1.9,map:dotTex,vertexColors:true,
   transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
-scene.add(new THREE.Points(starGeo,starMat));
+const starMatGold=new THREE.PointsMaterial({size:3.2,map:dotTexGold,color:0xffe0a0,
+  transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+scene.add(new THREE.Points(starGeo,starMatCool));
+scene.add(new THREE.Points(starGeo,starMatGold));
 
 /* ============ nebulae ============ */
 const nebCols=[['rgba(120,80,220,.55)','rgba(40,20,90,.25)'],
@@ -1318,6 +1329,19 @@ const tmpC=new THREE.Color();
 const fv=new THREE.Vector3(),dirv=new THREE.Vector3(),desired=new THREE.Vector3(),
       lookV=new THREE.Vector3(0,0,-30),homeLook=new THREE.Vector3(0,0,-30),
       camHome=new THREE.Vector3(0,0,130);
+
+/* 좁은 화면(모바일 세로) 대응 — 천체를 안쪽으로 모으고 카메라를 뒤로 */
+let camZ=130;
+const layoutGroups=[earth,dx,uni647,drop,ship,tri,gWrap];
+layoutGroups.forEach(g=>{g.userData.bx=g.position.x;});
+function applyLayout(){
+  const a=window.innerWidth/Math.max(1,window.innerHeight);
+  const fx=a<1.05?Math.max(.5,a*.62):1;
+  layoutGroups.forEach(g=>{g.position.x=g.userData.bx*fx;});
+  camZ=a<1.05?205:130;
+  camHome.z=camZ;
+}
+applyLayout();
 function tick(t){
   requestAnimationFrame(tick);
   const time=t*.001;
@@ -1345,15 +1369,12 @@ function tick(t){
       y+=Math.sin(time*.7+ph[i]*3)*f5*6;
     }
     pos[i*3]=x;pos[i*3+1]=y;pos[i*3+2]=z;
-    const hue=lerp(h0[i]+f4*.05,.1,fG);
-    const lig=clamp(l0[i]+fG*.28+f0*.2,-0,.97);
-    tmpC.setHSL(hue,lerp(.65,.85,fG),lig);
-    col[i*3]=tmpC.r;col[i*3+1]=tmpC.g;col[i*3+2]=tmpC.b;
   }
   starGeo.attributes.position.needsUpdate=true;
-  starGeo.attributes.color.needsUpdate=true;
-  starMat.size=1.9+fG*1.7;
-  starMat.opacity=clamp(1-f0*.9,0,1);
+  const sVis=clamp(1-f0*.9,0,1);
+  starMatCool.opacity=sVis*(1-fG*.92);      // 금빛으로 갈수록 청백 별 퇴장
+  starMatGold.opacity=sVis*fG;              // 10차원 금빛 별 등장
+  starMatGold.size=1.9+fG*1.9;
 
   /* nebulae */
   const nebVis=S(f01(d,2.1,3))*(1-S(f01(d,8.4,9.8)));
@@ -1444,7 +1465,7 @@ function tick(t){
     camera.position.lerp(desired,.045);
     lookV.lerp(fv,.06);
   }else{
-    desired.set(mx*9,-my*6,130-scrollF*38);
+    desired.set(mx*9,-my*6,camZ-scrollF*38);
     camera.position.lerp(desired,.05);
     lookV.lerp(homeLook,.055);
   }
@@ -1459,6 +1480,7 @@ window.addEventListener('resize',()=>{
   camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
+  applyLayout();
 });
 
 
