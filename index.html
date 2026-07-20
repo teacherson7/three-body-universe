@@ -861,8 +861,8 @@ for(let i=0;i<N;i++){
   l0[i]=.5+Math.random()*.35;
 }
 const starGeo=new THREE.BufferGeometry();
-starGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-starGeo.setAttribute('color',new THREE.BufferAttribute(col,3));
+starGeo.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
+starGeo.setAttribute('color',new THREE.BufferAttribute(col,3).setUsage(THREE.DynamicDrawUsage));
 const starMat=new THREE.PointsMaterial({size:1.9,map:dotTex,vertexColors:true,
   transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
 scene.add(new THREE.Points(starGeo,starMat));
