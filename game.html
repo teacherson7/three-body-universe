@@ -277,9 +277,17 @@
   #endChar{font-size:68px;line-height:1;margin-bottom:8px;animation:bob 1.5s ease-in-out infinite}
   #endBadge{display:inline-block;border:1px solid var(--amber);border-radius:22px;padding:7px 20px;font-size:13px;letter-spacing:.16em;margin-bottom:14px}
   @media (max-width:760px){#charDock{display:none!important}.ccard{width:44%}.lvl{width:44%}#memGrid{gap:6px;--memcard:46px}.card .bk,.card .f{font-size:22px}#endChar{font-size:52px}}
+  /* 아카이브(홈)로 돌아가는 버튼 — 좌하단 고정, HUD/캐릭터독과 겹치지 않음 */
+  #homeLink{position:fixed;left:14px;bottom:14px;z-index:12;display:inline-flex;align-items:center;gap:6px;
+    padding:8px 15px;font-size:12px;letter-spacing:.04em;color:var(--amber);text-decoration:none;
+    background:rgba(12,12,17,.82);border:1px solid var(--line);border-radius:20px;
+    transition:background .25s,box-shadow .25s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  #homeLink:hover{background:rgba(232,179,74,.14);box-shadow:0 0 16px rgba(232,179,74,.35)}
+  @media (max-width:760px){#homeLink{font-size:11px;padding:7px 12px}}
 </style>
 </head>
 <body>
+<a id="homeLink" href="index.html">⌂ 삼체 아카이브로</a>
 <canvas id="sky"></canvas>
 <div class="vig"></div>
 <div id="flash"></div>
