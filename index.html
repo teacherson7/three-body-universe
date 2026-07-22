@@ -250,6 +250,8 @@ footer{position:relative;z-index:2;text-align:center;padding:110px 20px 140px}
 footer .fq{font-family:var(--serif);font-size:clamp(1rem,3vw,1.35rem);letter-spacing:.15em;color:rgba(223,232,255,.9)}
 footer .fq em{color:var(--gold);font-style:normal}
 footer .credit{margin-top:26px;color:rgba(143,163,200,.55);font-size:.72rem;letter-spacing:.2em}
+footer .copyright{margin-top:14px;color:rgba(232,195,122,.7);font-size:.72rem;letter-spacing:.14em}
+footer .disclaimer{margin-top:8px;color:rgba(143,163,200,.4);font-size:.66rem;letter-spacing:.06em;line-height:1.7;max-width:640px;margin-left:auto;margin-right:auto}
 
 /* ---------- poi (explore) card ---------- */
 #poiCard{
@@ -845,6 +847,8 @@ nav a{font-size:.92rem}
 <footer>
   <div class="fq">"우주는 크지만, <em>생명은 더 크다</em>."</div>
   <div class="credit">三體 UNIVERSE ARCHIVE — 류츠신 삼체 3부작 · 구상섬전 · 바오수 삼체 X | 나만의 삼체 아카이브</div>
+  <div class="copyright">© 2026 Three-Body Universe Archive. All rights reserved.</div>
+  <div class="disclaimer">본 사이트의 웹디자인·코드·해설 텍스트·게임 등 창작 요소의 저작권은 제작자에게 있습니다. 『삼체(三體)』 등 원작의 명칭·설정·이야기의 저작권은 류츠신 및 정당한 권리자에게 귀속되며, 본 사이트는 비영리 팬 제작 아카이브입니다.</div>
 </footer>
 
 </div>
@@ -1590,6 +1594,20 @@ document.querySelectorAll('[data-char]').forEach(c=>{
   c.addEventListener('click',()=>c.classList.toggle('open'));
 });
 
+})();
+</script>
+<!-- 콘텐츠 보호(억지력 수준) — 우클릭·드래그·개발자도구 단축키 제한 -->
+<script>
+(function(){
+  var stop=function(e){e.preventDefault();e.stopPropagation();return false;};
+  document.addEventListener('contextmenu',stop);   /* 마우스 우클릭 */
+  document.addEventListener('dragstart',stop);      /* 이미지·요소 드래그 */
+  document.addEventListener('keydown',function(e){
+    var k=(e.key||'').toLowerCase();
+    if(k==='f12') return stop(e);                                   /* 개발자 도구 */
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) return stop(e);
+    if((e.ctrlKey||e.metaKey)&&(k==='u'||k==='s')) return stop(e);   /* 소스 보기·저장 */
+  });
 })();
 </script>
 </body>

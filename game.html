@@ -284,6 +284,9 @@
     transition:background .25s,box-shadow .25s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
   #homeLink:hover{background:rgba(232,179,74,.14);box-shadow:0 0 16px rgba(232,179,74,.35)}
   @media (max-width:760px){#homeLink{font-size:11px;padding:7px 12px}}
+  /* 타이틀 화면 저작권 표기 */
+  #title .copyr{margin-top:30px;font-size:11px;line-height:1.7;letter-spacing:.04em;color:rgba(232,179,74,.62)}
+  #title .copyr span{color:var(--muted);font-size:10px;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -309,6 +312,8 @@
   <p class="lead">역사 속 지성 하나를 골라 삼체 게임 속으로 들어가라. 문명의 여명부터 오늘에 이르는 연대기를 따라,
   각 시대의 미니게임과 원작 퀴즈를 풀어 진실에 다가가라. 캐릭터의 능력치가 그대의 무기다.</p>
   <button class="go" id="toSelect">지성을 선택한다</button>
+  <div class="copyr">© 2026 Three-Body Universe Archive. All rights reserved.<br>
+  <span>『삼체』 원작 저작권은 류츠신 및 정당한 권리자에게 있으며, 본 게임은 비영리 팬 제작물입니다.</span></div>
 </div>
 
 <!-- SELECT -->
@@ -860,6 +865,20 @@ let last=performance.now();
 function loop(now){const rdt=Math.min((now-last)/1000,.05);last=now;
   for(let s=0;s<2;s++)step(SIM.dt);bgRender();requestAnimationFrame(loop);}
 seed();requestAnimationFrame(loop);
+</script>
+<!-- 콘텐츠 보호(억지력 수준) — 우클릭·드래그·개발자도구 단축키 제한 -->
+<script>
+(function(){
+  var stop=function(e){e.preventDefault();e.stopPropagation();return false;};
+  document.addEventListener('contextmenu',stop);
+  document.addEventListener('dragstart',stop);
+  document.addEventListener('keydown',function(e){
+    var k=(e.key||'').toLowerCase();
+    if(k==='f12') return stop(e);
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) return stop(e);
+    if((e.ctrlKey||e.metaKey)&&(k==='u'||k==='s')) return stop(e);
+  });
+})();
 </script>
 </body>
 </html>
