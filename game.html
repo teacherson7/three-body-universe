@@ -108,8 +108,9 @@
   .vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,0,.6) 100%)}
   #flash{position:fixed;inset:0;z-index:6;pointer-events:none;opacity:0;mix-blend-mode:screen}
   #floats{position:fixed;inset:0;z-index:9;pointer-events:none;overflow:hidden}
-  .float{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:26px;letter-spacing:.05em;
-    text-shadow:0 2px 12px rgba(0,0,0,.7);animation:fu 1.4s ease-out forwards;white-space:nowrap;font-weight:bold}
+  .float{position:absolute;left:50%;top:46%;transform:translateX(-50%);font-size:26px;letter-spacing:.05em;
+    text-shadow:0 0 3px #05070d,0 0 3px #05070d,0 0 9px #05070d,0 2px 14px rgba(0,0,0,.92);
+    animation:fu 1.4s ease-out forwards;white-space:nowrap;font-weight:bold}
   @keyframes fu{0%{opacity:0;transform:translate(-50%,12px) scale(.8)}18%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-74px)}}
   .hidden{display:none!important}
   b{color:var(--amber)}
@@ -407,6 +408,19 @@ const Snd={c:null,on:true,init(){if(!this.c)try{this.c=new(AudioContext||webkitA
   good(){this.t(523,.1,'triangle');setTimeout(()=>this.t(784,.18,'triangle'),90);},
   bad(){this.t(150,.35,'square',.06,70);},click(){this.t(340,.05,'square',.04);},
   pop(){this.t(660,.08,'sine',.05);},jump(){this.t(420,.14,'sine',.05,760);},coin(){this.t(880,.08,'square',.05);setTimeout(()=>this.t(1180,.12,'square',.05),70);},
+  boom(p){const P=Math.min(p||1,3);
+    this.t(126-P*20,.32+P*.07,'sawtooth',.08,40);
+    this.t(230,.15,'square',.05,58);
+    setTimeout(()=>this.t(88,.3,'sine',.065,36),45);},
+  combo(k){const f=440*Math.pow(1.1225,Math.min(k,10));
+    this.t(f,.09,'triangle',.055);setTimeout(()=>this.t(f*1.5,.15,'triangle',.05),75);},
+  spGet(){[660,880,1175,1568].forEach((f,i)=>setTimeout(()=>this.t(f,.22,'triangle',.06),i*70));},
+  spRainbow(){[523,659,784,988,1319].forEach((f,i)=>setTimeout(()=>this.t(f,.26,'triangle',.06),i*55));
+    setTimeout(()=>this.boom(2),240);},
+  spDrop(){this.t(1760,.1,'sine',.05,620);setTimeout(()=>this.t(2200,.18,'sine',.045,900),60);this.boom(2.2);},
+  spStrike(){this.t(70,.5,'sawtooth',.09,28);this.t(1200,.22,'square',.05,120);
+    setTimeout(()=>this.t(180,.4,'sawtooth',.07,40),90);},
+  spCurve(){this.t(180,.4,'sine',.06,900);setTimeout(()=>this.t(320,.35,'triangle',.05,1400),120);},
   fanfare(){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.t(f,.35,'triangle',.07),i*150));},
   doom(){[330,262,196,147,110].forEach((f,i)=>setTimeout(()=>this.t(f,.5,'sawtooth',.06),i*200));}};
 
@@ -439,7 +453,14 @@ function bgRender(){ctx.fillStyle='#050507';ctx.fillRect(0,0,W,H);
 
 /* ---------- FX ---------- */
 function flash(c,s=.4){const f=el('flash');f.style.background=c;f.style.transition='none';f.style.opacity=s;requestAnimationFrame(()=>{f.style.transition='opacity 1s';f.style.opacity=0;});}
-function floatText(t,c){const d=document.createElement('div');d.className='float';d.style.color=c;d.textContent=t;d.style.left=(45+Math.random()*10)+'%';el('floats').appendChild(d);setTimeout(()=>d.remove(),1500);}
+function floatText(t,c){const host=el('floats');
+  while(host.childElementCount>=2)host.firstElementChild.remove();
+  const d=document.createElement('div');d.className='float';d.style.color=c;d.textContent=t;
+  d.style.left=(45+Math.random()*10)+'%';
+  /* 여러 줄이 겹쳐 읽히지 않는 사고를 막는다 — 아래로 한 칸씩 밀고, 긴 문구는 줄인다 */
+  d.style.top=(46+host.childElementCount*6.5)+'%';
+  if(t.length>16)d.style.fontSize=(t.length>26?17:21)+'px';
+  host.appendChild(d);setTimeout(()=>d.remove(),1500);}
 
 /* =====================================================================
    데이터: 캐릭터 (능력치 = 지성 통찰 담력 인내 창의, 1~10)
@@ -781,6 +802,13 @@ const Runner={raf:null,
    ===================================================================== */
 const BUB_COLS=['#ffb64a','#8fb8ff','#ff7a5c','#6fce8f','#a67fd0','#e8e19a'];
 const BUB_RGB=['255,182,74','143,184,255','255,122,92','111,206,143','166,127,208','232,225,154'];
+/* 특수 구슬 — 원작의 네 가지 사건을 구슬 하나로 옮긴 것 */
+const SP={
+  rainbow:{n:'무지개 항성',t:'어느 색 성단에나 녹아든다',c:'#ffd76a',rgb:'255,215,106'},
+  droplet:{n:'물방울',t:'붙지 않고 성단을 관통한다',c:'#dfecf5',rgb:'223,236,245'},
+  strike :{n:'차원 타격',t:'맞은 줄을 이차원으로 눌러 지운다',c:'#c496ff',rgb:'196,150,255'},
+  curve  :{n:'곡률 추진',t:'천장을 한 칸 밀어 올린다',c:'#6edcc8',rgb:'110,220,200'}};
+function RGB(ci){return typeof ci==='number'?BUB_RGB[ci]:(SP[ci]?SP[ci].rgb:'255,255,255');}
 const Bubble={raf:null,last:0,
   key(r,c){return r*100+c;},
   colsIn(r){return 18-(r%2);},
@@ -789,9 +817,27 @@ const Bubble={raf:null,last:0,
     return [[r,c-1],[r,c+1],[r-1,c],[r+1,c],[r-1,c+o],[r+1,c+o]];},
   pickFrom(g,nc){const present=[...new Set([...g.values()])];
     return present.length?present[Math.floor(Math.random()*present.length)]:Math.floor(Math.random()*nc);},
+  /* --- 폭발 연출 --- */
+  burst(x,y,ci,cnt,pw){for(let i=0;i<cnt;i++){const a=Math.random()*6.283,sp=(45+Math.random()*240)*pw;
+    mgi.fx.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-50,r:1.2+Math.random()*3.4,ci,life:0,max:.42+Math.random()*.5});}},
+  ring(x,y,ci){mgi.rings.push({x,y,ci,life:0,max:.4});},
+  shakeAdd(v){mgi.shake=Math.min(15,mgi.shake+v);},
+  stepFx(dt){const f=mgi.fx;
+    for(let i=f.length-1;i>=0;i--){const q=f[i];q.life+=dt;
+      if(q.life>=q.max){f.splice(i,1);continue;}
+      q.vy+=390*dt;q.vx*=.985;q.x+=q.vx*dt;q.y+=q.vy*dt;}
+    const fl=mgi.falling;
+    for(let i=fl.length-1;i>=0;i--){const b=fl[i];b.life+=dt;b.vy+=780*dt;
+      b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y>460)fl.splice(i,1);}
+    const rg=mgi.rings;
+    for(let i=rg.length-1;i>=0;i--){rg[i].life+=dt;if(rg[i].life>=rg[i].max)rg.splice(i,1);}
+    const bm=mgi.beams;
+    for(let i=bm.length-1;i>=0;i--){bm[i].life+=dt;if(bm[i].life>=bm[i].max)bm.splice(i,1);}
+    mgi.shake*=Math.pow(.0016,dt);if(mgi.shake<.15)mgi.shake=0;
+    if(mgi.comboT>0)mgi.comboT=Math.max(0,mgi.comboT-dt*.75);},
   start(L){const host=el('mgBody');
     host.innerHTML=`<canvas id="bubCanvas" width="620" height="400"></canvas>`+
-      `<div id="runHint">움직여 조준하고 탭/클릭으로 발사 — 같은 색 3개 이상이면 터진다. 천장이 데드라인에 닿기 전에 성단을 모두 해체하라</div>`+
+      `<div id="runHint">움직여 조준하고 탭/클릭으로 발사 — 같은 색 3개 이상이면 터진다. <b>쉬지 않고 연달아 터뜨리면 연쇄가 쌓여 폭발이 커진다. 크게 터뜨리면 아주 드물게 특수 구슬이 장전된다.</b> 천장이 데드라인에 닿기 전에 성단을 모두 해체하라</div>`+
       `<div style="margin-top:8px"><button class="go ghost sm" id="bubSwap">↻ 구슬 교체 (<span id="bubSw">0</span>)</button></div>`;
     const cv=el('bubCanvas'),c=cv.getContext('2d');
     const g=new Map();
@@ -800,6 +846,8 @@ const Bubble={raf:null,last:0,
     const stars=[];for(let i=0;i<60;i++)stars.push([Math.random()*620,Math.random()*400,Math.random()*1.1+.3,Math.random()*.4+.15]);
     mgi={type:'bubble',cv,c,g,nc:L.colors,ceil:0,shots:0,dropEvery:L.dropEvery,
       cur:0,nxt:0,aim:{x:310,y:120},bullet:null,over:false,stars,
+      fx:[],falling:[],rings:[],beams:[],shake:0,combo:0,bestCombo:0,comboT:0,
+      spGiven:0,spCool:0,
       swaps:Math.floor(stat('창의')/3),guide:70+stat('통찰')*14};
     mgi.cur=Bubble.pickFrom(g,L.colors);mgi.nxt=Bubble.pickFrom(g,L.colors);
     el('bubSw').textContent=mgi.swaps;
@@ -814,6 +862,7 @@ const Bubble={raf:null,last:0,
       mgi.aim=pt(e);Bubble.shoot();});
     Bubble.last=performance.now();Bubble.raf=requestAnimationFrame(Bubble.loop);},
   shoot(){if(mgi.bullet)return;
+    if(mgi.spCool>0)mgi.spCool--;
     let dx=mgi.aim.x-310,dy=mgi.aim.y-368;if(dy>-30)dy=-30;
     const n=Math.hypot(dx,dy);
     mgi.bullet={x:310,y:368,vx:dx/n*540,vy:dy/n*540,col:mgi.cur};
@@ -825,7 +874,9 @@ const Bubble={raf:null,last:0,
         const n=Math.hypot(b.vx,b.vy);b.x+=b.vx/n*st;b.y+=b.vy/n*st;
         if(b.x<24){b.x=24;b.vx=Math.abs(b.vx);}
         if(b.x>596){b.x=596;b.vx=-Math.abs(b.vx);}
-        if(Bubble.hitTest(b))break;}}
+        if(b.col==='droplet'){if(Bubble.pierce(b))break;}
+        else if(Bubble.hitTest(b))break;}}
+    Bubble.stepFx(dt);
     Bubble.render();
     Bubble.raf=requestAnimationFrame(Bubble.loop);},
   hitTest(b){const topY=56+mgi.ceil*28;
@@ -835,12 +886,14 @@ const Bubble={raf:null,last:0,
     if(!hit)return false;
     Bubble.stick(b);mgi.bullet=null;return true;},
   stick(b){let r0=Math.round((b.y-56)/28-mgi.ceil);if(r0<0)r0=0;
+    if(typeof b.col==='string'&&b.col!=='rainbow'){Bubble.special(b,r0);return;}
     let best=null,bd=1e9;
     for(let rr=Math.max(0,r0-1);rr<=r0+1;rr++){const cols=Bubble.colsIn(rr);
       for(let cc=0;cc<cols;cc++){const k=Bubble.key(rr,cc);if(mgi.g.has(k))continue;
         const p=Bubble.pos(rr,cc);const d2=(p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y);
         if(d2<bd){bd=d2;best=[rr,cc];}}}
     if(!best)return;
+    if(b.col==='rainbow'){Bubble.useRainbow(best[0],best[1]);return;}
     mgi.g.set(Bubble.key(best[0],best[1]),b.col);
     Bubble.resolve(best[0],best[1]);},
   resolve(r,c){const g=mgi.g,col=g.get(Bubble.key(r,c));
@@ -850,8 +903,23 @@ const Bubble={raf:null,last:0,
       for(const nb of Bubble.nbrs(cur[0],cur[1])){const nr=nb[0],nc2=nb[1],k=Bubble.key(nr,nc2);
         if(nr<0||nc2<0||nc2>=Bubble.colsIn(nr)||seen.has(k))continue;
         if(g.get(k)===col){seen.add(k);q.push([nr,nc2]);cl.push([nr,nc2]);}}}
-    if(cl.length>=3){cl.forEach(p=>g.delete(Bubble.key(p[0],p[1])));Snd.good();
-      floatText(cl.length+'개 해체!','#6fce8f');
+    if(cl.length>=3){
+      const pw=Math.min(2.2,.85+cl.length*.12);
+      cl.forEach(p=>{const pp=Bubble.pos(p[0],p[1]);
+        Bubble.burst(pp.x,pp.y,col,7+Math.min(15,cl.length*2),pw);
+        Bubble.ring(pp.x,pp.y,col);
+        g.delete(Bubble.key(p[0],p[1]));});
+      mgi.combo++;if(mgi.combo>mgi.bestCombo)mgi.bestCombo=mgi.combo;
+      mgi.comboT=1;
+      Bubble.shakeAdd(2.6+cl.length*.9);
+      Snd.boom(cl.length/3);Snd.combo(mgi.combo);
+      if(mgi.combo===3){flash('#e8b34a',.2);Bubble.shakeAdd(6);
+        floatText('3연쇄 — 항성 '+cl.length+'개 연쇄 붕괴!','#e8b34a');Snd.coin();}
+      else if(mgi.combo===5){flash('#ff7a5c',.26);Bubble.shakeAdd(9);
+        floatText('5연쇄 — 성단이 무너진다!','#ff7a5c');Snd.fanfare();}
+      else if(mgi.combo>5){flash('#ff7a5c',.18);Bubble.shakeAdd(7);
+        floatText(mgi.combo+'연쇄 · '+cl.length+'개 해체!','#ff7a5c');Snd.coin();}
+      else floatText(cl.length+'개 해체!'+(mgi.combo>1?'  ×'+mgi.combo:''),'#6fce8f');
       /* 천장에 연결되지 않은 부유 성단 낙하 */
       const anchored=new Set(),q2=[];
       for(let cc=0;cc<18;cc++){const k=Bubble.key(0,cc);if(g.has(k)){anchored.add(k);q2.push([0,cc]);}}
@@ -859,9 +927,15 @@ const Bubble={raf:null,last:0,
         for(const nb of Bubble.nbrs(cur[0],cur[1])){const nr=nb[0],nc2=nb[1],k=Bubble.key(nr,nc2);
           if(nr<0||nc2<0||nc2>=Bubble.colsIn(nr))continue;
           if(g.has(k)&&!anchored.has(k)){anchored.add(k);q2.push([nr,nc2]);}}}
-      let drop=0;for(const k of [...g.keys()])if(!anchored.has(k)){g.delete(k);drop++;}
-      if(drop){Snd.coin();floatText('부유 성단 +'+drop+' 낙하!','#5aa9d6');}}
-    else Snd.click();
+      let drop=0;for(const k of [...g.keys()])if(!anchored.has(k)){
+        const rr=Math.floor(k/100),pp=Bubble.pos(rr,k%100);
+        mgi.falling.push({x:pp.x,y:pp.y,vx:(Math.random()-.5)*80,vy:-70-Math.random()*100,
+          ci:g.get(k),life:0});
+        g.delete(k);drop++;}
+      if(drop){Snd.coin();Bubble.shakeAdd(3+drop*.5);
+        floatText('부유 성단 +'+drop+' 낙하!','#5aa9d6');}
+      Bubble.grantSpecial(cl.length,drop);}
+    else {mgi.combo=0;mgi.comboT=0;Snd.click();}
     mgi.shots++;
     if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.15);floatText('천장 하강!','#e8b34a');}
     /* 승패 판정 */
@@ -870,10 +944,13 @@ const Bubble={raf:null,last:0,
     for(const k of g.keys()){const r2=Math.floor(k/100),p=Bubble.pos(r2,k%100);
       if(p.y+16>344){mgi.over=true;Bubble.stop();endMini(false);return;}}
     /* 현재·다음 구슬이 보드에 없는 색이면 교정 (막판 클리어 가능성 보장) */
-    if(![...g.values()].includes(mgi.cur))mgi.cur=Bubble.pickFrom(g,mgi.nc);
-    if(![...g.values()].includes(mgi.nxt))mgi.nxt=Bubble.pickFrom(g,mgi.nc);
+    if(typeof mgi.cur==='number'&&![...g.values()].includes(mgi.cur))mgi.cur=Bubble.pickFrom(g,mgi.nc);
+    if(typeof mgi.nxt==='number'&&![...g.values()].includes(mgi.nxt))mgi.nxt=Bubble.pickFrom(g,mgi.nc);
     el('mgInfo').textContent=`남은 항성 ${g.size} · 천장까지 ${mgi.dropEvery-(mgi.shots%mgi.dropEvery)}발`;},
   render(){const c=mgi.c;c.clearRect(0,0,620,400);
+    c.save();
+    if(mgi.shake>0){const a=Math.random()*6.283;
+      c.translate(Math.cos(a)*mgi.shake,Math.sin(a)*mgi.shake*.7);}
     for(const st of mgi.stars){c.fillStyle='rgba(220,235,255,'+st[3]+')';
       c.beginPath();c.arc(st[0],st[1],st[2],0,6.283);c.fill();}
     const topY=56+mgi.ceil*28;
@@ -902,13 +979,213 @@ const Bubble={raf:null,last:0,
     Bubble.ball(c,572,368,mgi.nxt,11);
     c.fillStyle='#cfc9ba';c.font='12px sans-serif';c.textAlign='left';
     c.fillText('천장 하강까지 '+(mgi.dropEvery-(mgi.shots%mgi.dropEvery))+'발',10,392);
+    if(typeof mgi.cur==='string'){c.save();c.textAlign='center';
+      c.font='bold 13px sans-serif';c.shadowColor=SP[mgi.cur].c;c.shadowBlur=12;
+      c.fillStyle=SP[mgi.cur].c;
+      c.fillText('◆ '+SP[mgi.cur].n+' — '+SP[mgi.cur].t,318,392);c.restore();}
     if(mgi.bullet)Bubble.ball(c,mgi.bullet.x,mgi.bullet.y,mgi.bullet.col,16);
-    c.font='15px sans-serif';c.textAlign='center';c.fillText(P.char.em,278,374);},
-  ball(c,x,y,ci,R){const g2=c.createRadialGradient(x-R*.35,y-R*.35,1,x,y,R);
+    c.font='15px sans-serif';c.textAlign='center';c.fillText(P.char.em,278,374);
+    /* 떨어져 나가는 부유 성단 */
+    for(const b of mgi.falling){c.save();c.globalAlpha=Math.max(0,1-b.life*.6);
+      Bubble.ball(c,b.x,b.y,b.ci,16);c.restore();}
+    /* 폭발 충격파와 항성 파편 */
+    c.globalCompositeOperation='lighter';
+    for(const bm of mgi.beams){const t=bm.life/bm.max,a=(1-t)*.9,h=4+t*26;
+      const cc2=bm.up?'110,220,200':'196,150,255';
+      const gr=c.createLinearGradient(0,bm.y-h,0,bm.y+h);
+      gr.addColorStop(0,'rgba('+cc2+',0)');
+      gr.addColorStop(.5,'rgba('+cc2+','+a.toFixed(3)+')');
+      gr.addColorStop(1,'rgba('+cc2+',0)');
+      c.fillStyle=gr;c.fillRect(0,bm.y-h,620,h*2);}
+    for(const r of mgi.rings){const t=r.life/r.max;
+      c.strokeStyle='rgba('+RGB(r.ci)+','+((1-t)*.85).toFixed(3)+')';
+      c.lineWidth=3.2*(1-t)+.6;
+      c.beginPath();c.arc(r.x,r.y,7+t*32,0,6.283);c.stroke();}
+    for(const q of mgi.fx){const t=q.life/q.max;
+      c.fillStyle='rgba('+RGB(q.ci)+','+(1-t).toFixed(3)+')';
+      c.beginPath();c.arc(q.x,q.y,q.r*(1-t*.55),0,6.283);c.fill();}
+    c.globalCompositeOperation='source-over';
+    c.restore();
+    /* 연쇄 표시 — 흔들림 밖에 그려 읽히게 한다 */
+    if(mgi.combo>1&&mgi.comboT>0){const t=mgi.comboT;
+      const col2=mgi.combo>=5?'#ff7a5c':mgi.combo>=3?'#e8b34a':'#6fce8f';
+      const sz=26+Math.min(mgi.combo,8)*4, y2=326-(1-t)*22;
+      c.save();c.textAlign='center';c.globalAlpha=Math.min(1,t*1.5);
+      c.font='bold '+sz+'px sans-serif';
+      c.lineJoin='round';c.lineWidth=sz*.34;c.strokeStyle='rgba(6,8,14,.92)';
+      c.strokeText(mgi.combo+' 연쇄',310,y2);
+      c.shadowColor=col2;c.shadowBlur=18;
+      c.fillStyle=col2;c.fillText(mgi.combo+' 연쇄',310,y2);
+      c.restore();}},
+  ball(c,x,y,ci,R){if(typeof ci==='string'){Bubble.sball(c,x,y,ci,R);return;}
+    const g2=c.createRadialGradient(x-R*.35,y-R*.35,1,x,y,R);
     g2.addColorStop(0,'rgba(255,255,255,.9)');g2.addColorStop(.25,BUB_COLS[ci]);
     g2.addColorStop(1,'rgba('+BUB_RGB[ci]+',.55)');
     c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
     c.strokeStyle='rgba('+BUB_RGB[ci]+',.9)';c.lineWidth=1;c.stroke();},
+  /* ===== 특수 구슬 ===== */
+  cluster(r,c,col){const g=mgi.g,seen=new Set([Bubble.key(r,c)]),q=[[r,c]],cl=[[r,c]];
+    while(q.length){const cur=q.pop();
+      for(const nb of Bubble.nbrs(cur[0],cur[1])){const nr=nb[0],nc2=nb[1],k=Bubble.key(nr,nc2);
+        if(nr<0||nc2<0||nc2>=Bubble.colsIn(nr)||seen.has(k))continue;
+        if(g.get(k)===col){seen.add(k);q.push([nr,nc2]);cl.push([nr,nc2]);}}}
+    return cl;},
+  /* 특수 구슬이 터진 뒤의 뒷정리 — resolve() 꼬리와 같은 순서를 따른다 */
+  after(noShot){const g=mgi.g;
+    const anchored=new Set(),q2=[];
+    for(let cc=0;cc<18;cc++){const k=Bubble.key(0,cc);if(g.has(k)){anchored.add(k);q2.push([0,cc]);}}
+    while(q2.length){const cur=q2.pop();
+      for(const nb of Bubble.nbrs(cur[0],cur[1])){const nr=nb[0],nc2=nb[1],k=Bubble.key(nr,nc2);
+        if(nr<0||nc2<0||nc2>=Bubble.colsIn(nr))continue;
+        if(g.has(k)&&!anchored.has(k)){anchored.add(k);q2.push([nr,nc2]);}}}
+    let drop=0;for(const k of [...g.keys()])if(!anchored.has(k)){
+      const rr=Math.floor(k/100),pp=Bubble.pos(rr,k%100);
+      mgi.falling.push({x:pp.x,y:pp.y,vx:(Math.random()-.5)*80,vy:-70-Math.random()*100,
+        ci:g.get(k),life:0});
+      g.delete(k);drop++;}
+    if(drop){Snd.coin();Bubble.shakeAdd(3+drop*.5);
+      floatText('부유 성단 +'+drop+' 낙하!','#5aa9d6');}
+    if(!noShot){mgi.shots++;
+      if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.15);floatText('천장 하강!','#e8b34a');}}
+    if(!g.size){mgi.over=true;Bubble.stop();floatText('성단 해체 — 증명 완료!','#6fce8f');
+      setTimeout(()=>endMini(true),450);return;}
+    for(const k of g.keys()){const r2=Math.floor(k/100),p=Bubble.pos(r2,k%100);
+      if(p.y+16>344){mgi.over=true;Bubble.stop();endMini(false);return;}}
+    if(typeof mgi.cur==='number'&&![...g.values()].includes(mgi.cur))mgi.cur=Bubble.pickFrom(g,mgi.nc);
+    if(typeof mgi.nxt==='number'&&![...g.values()].includes(mgi.nxt))mgi.nxt=Bubble.pickFrom(g,mgi.nc);
+    el('mgInfo').textContent=`남은 항성 ${g.size} · 천장까지 ${mgi.dropEvery-(mgi.shots%mgi.dropEvery)}발`;},
+  /* 획득은 짜게 — 정말 잘 터뜨렸을 때만, 그것도 쿨다운을 두고 준다 */
+  grantSpecial(pop,drop){
+    if(mgi.spCool>0||mgi.spGiven>=3||typeof mgi.nxt==='string')return;
+    const tot=pop+drop,cb=mgi.combo;
+    /* 한 번 무지개를 본 사람에겐 다음부터 다른 구슬을 준다 — 넷을 골고루 보게 하려는 장치 */
+    const t2=tot>=8||cb>=6||mgi.spGiven>=1, t1=tot>=7||cb>=5;
+    if(!t1)return;
+    let pick;
+    if(t2)pick=mgi.ceil>=2?(Math.random()<.5?'curve':'droplet')
+                          :(Math.random()<.5?'droplet':'strike');
+    else pick='rainbow';
+    mgi.nxt=pick;mgi.spGiven++;mgi.spCool=6;
+    flash(SP[pick].c,.34);Bubble.shakeAdd(7);Snd.spGet();
+    floatText('특수 구슬 — '+SP[pick].n+' 획득!',SP[pick].c);},
+  /* 무지개 항성: 이웃 색 중 가장 큰 성단을 골라 그 색이 된다 */
+  useRainbow(r,c){const g=mgi.g,k=Bubble.key(r,c),p=Bubble.pos(r,c);
+    const cand=[...new Set(Bubble.nbrs(r,c)
+      .map(n=>g.get(Bubble.key(n[0],n[1]))).filter(v=>typeof v==='number'))];
+    let bc=null,bn=0;
+    for(const col of cand){g.set(k,col);const n=Bubble.cluster(r,c,col).length;
+      if(n>bn){bn=n;bc=col;}}
+    for(let i=0;i<6;i++)Bubble.burst(p.x,p.y,i,9,1.5);
+    Bubble.ring(p.x,p.y,'rainbow');flash('#ffd76a',.3);Bubble.shakeAdd(6);Snd.spRainbow();
+    if(bc!==null&&bn>=3){g.set(k,bc);
+      floatText('무지개 항성 — 색을 삼킨다!','#ffd76a');
+      Bubble.resolve(r,c);return;}
+    /* 삼킬 성단이 모자라면 스스로 초신성이 된다 — 헛방은 없다 */
+    g.delete(k);let n2=0;
+    for(const nb of Bubble.nbrs(r,c)){const kk=Bubble.key(nb[0],nb[1]);
+      if(g.has(kk)){const pp=Bubble.pos(nb[0],nb[1]);
+        Bubble.burst(pp.x,pp.y,g.get(kk),14,1.8);Bubble.ring(pp.x,pp.y,g.get(kk));
+        g.delete(kk);n2++;}}
+    Bubble.shakeAdd(9);Snd.boom(2.4);
+    floatText('무지개 항성 초신성 — '+n2+'개 증발!','#ffd76a');
+    Bubble.after();},
+  /* 물방울: 붙지 않고 지나간 자리를 전부 지운다 */
+  pierce(b){const g=mgi.g;
+    if(b.pier===undefined){b.pier=0;b.wet=0;}
+    b.wet++;
+    if(b.wet%2===0)mgi.fx.push({x:b.x,y:b.y,vx:(Math.random()-.5)*34,
+      vy:40+Math.random()*50,r:1.3+Math.random()*2.3,ci:'droplet',life:0,max:.34});
+    for(const k of [...g.keys()]){const r=Math.floor(k/100),p=Bubble.pos(r,k%100);
+      const d2=(p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y);
+      if(d2<26*26){Bubble.burst(p.x,p.y,g.get(k),15,1.9);Bubble.ring(p.x,p.y,g.get(k));
+        g.delete(k);b.pier++;Bubble.shakeAdd(2.4);}}
+    if(b.y<-24||b.y>440){mgi.bullet=null;
+      flash('#dfecf5',.3);Bubble.shakeAdd(8);Snd.spDrop();
+      floatText('물방울 — 성단을 '+b.pier+'개 꿰뚫었다!','#dfecf5');
+      Bubble.after();return true;}
+    return false;},
+  /* 차원 타격 · 곡률 추진 */
+  special(b,r0){const g=mgi.g;
+    if(b.col==='strike'){
+      let br=r0,bd=1e9;
+      for(const k of g.keys()){const rr=Math.floor(k/100),dy=Math.abs(Bubble.pos(rr,0).y-b.y);
+        if(dy<bd){bd=dy;br=rr;}}
+      mgi.beams.push({y:Bubble.pos(br,0).y,life:0,max:.55});
+      let n=0;for(const k of [...g.keys()])if(Math.floor(k/100)===br){
+        const p=Bubble.pos(br,k%100);
+        Bubble.burst(p.x,p.y,g.get(k),16,2);Bubble.ring(p.x,p.y,g.get(k));
+        g.delete(k);n++;}
+      flash('#c496ff',.34);Bubble.shakeAdd(15);Snd.spStrike();
+      floatText('차원 타격 — 한 줄이 이차원으로 눌렸다 ('+n+'개)','#c496ff');
+      Bubble.after();return;}
+    if(b.col==='curve'){
+      if(mgi.ceil>0){mgi.ceil--;
+        mgi.beams.push({y:56+mgi.ceil*28-18,life:0,max:.6,up:true});
+        flash('#6edcc8',.3);Bubble.shakeAdd(11);Snd.spCurve();
+        floatText('곡률 추진 — 천장을 한 칸 밀어 올렸다!','#6edcc8');
+        Bubble.after(true);return;}
+      let bk=null,bd=1e9;
+      for(const k of g.keys()){const rr=Math.floor(k/100),p=Bubble.pos(rr,k%100);
+        const d2=(p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y);if(d2<bd){bd=d2;bk=k;}}
+      let n=0;
+      if(bk!==null){const rr=Math.floor(bk/100),cc=bk%100;
+        for(const p2 of [[rr,cc]].concat(Bubble.nbrs(rr,cc))){
+          const kk=Bubble.key(p2[0],p2[1]);
+          if(g.has(kk)){const pp=Bubble.pos(p2[0],p2[1]);
+            Bubble.burst(pp.x,pp.y,g.get(kk),14,1.7);Bubble.ring(pp.x,pp.y,g.get(kk));
+            g.delete(kk);n++;}}}
+      mgi.beams.push({y:b.y,life:0,max:.5,up:true});
+      flash('#6edcc8',.28);Bubble.shakeAdd(11);Snd.spCurve();
+      floatText('곡률 추진 — 공간을 접어 '+n+'개를 밀어냈다!','#6edcc8');
+      Bubble.after();return;}
+    Bubble.after();},
+  /* 특수 구슬 그리기 */
+  sball(c,x,y,kind,R){const T=performance.now()/1000;c.save();
+    if(kind==='rainbow'){
+      for(let i=0;i<6;i++){c.fillStyle='rgba('+BUB_RGB[i]+',.92)';
+        c.beginPath();c.moveTo(x,y);
+        c.arc(x,y,R,T*1.6+i*1.047,T*1.6+(i+1)*1.047);c.closePath();c.fill();}
+      const g2=c.createRadialGradient(x,y,1,x,y,R);
+      g2.addColorStop(0,'rgba(255,255,255,.95)');
+      g2.addColorStop(.5,'rgba(255,255,255,.18)');
+      g2.addColorStop(1,'rgba(255,255,255,0)');
+      c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
+      c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=1.4;
+      c.beginPath();c.arc(x,y,R,0,6.283);c.stroke();}
+    else if(kind==='droplet'){
+      const g2=c.createRadialGradient(x-R*.4,y-R*.45,1,x,y,R);
+      g2.addColorStop(0,'rgba(255,255,255,1)');
+      g2.addColorStop(.35,'rgba(214,232,244,.96)');
+      g2.addColorStop(.8,'rgba(118,148,174,.92)');
+      g2.addColorStop(1,'rgba(232,246,255,.95)');
+      c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
+      c.fillStyle='rgba(255,255,255,.95)';
+      c.beginPath();c.ellipse(x-R*.34,y-R*.4,R*.26,R*.15,-.6,0,6.283);c.fill();
+      c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1;
+      c.beginPath();c.arc(x,y,R,0,6.283);c.stroke();}
+    else if(kind==='strike'){
+      const g2=c.createRadialGradient(x,y,1,x,y,R);
+      g2.addColorStop(0,'rgba(255,255,255,.95)');
+      g2.addColorStop(.5,'rgba(160,110,230,.95)');
+      g2.addColorStop(1,'rgba(70,30,120,.92)');
+      c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
+      c.fillStyle='rgba(255,255,255,'+(.65+.35*Math.abs(Math.sin(T*9))).toFixed(3)+')';
+      c.fillRect(x-R,y-R*.13,R*2,R*.26);
+      c.strokeStyle='rgba(220,190,255,.95)';c.lineWidth=1.2;
+      c.beginPath();c.arc(x,y,R,0,6.283);c.stroke();}
+    else{
+      const g2=c.createRadialGradient(x,y,1,x,y,R);
+      g2.addColorStop(0,'rgba(238,255,251,.96)');
+      g2.addColorStop(.6,'rgba(110,220,200,.92)');
+      g2.addColorStop(1,'rgba(18,88,88,.88)');
+      c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
+      c.strokeStyle='rgba(210,255,248,'+(.5+.45*Math.abs(Math.sin(T*7))).toFixed(3)+')';
+      c.lineWidth=1.7;c.lineCap='round';
+      c.beginPath();c.moveTo(x,y+R*.55);c.lineTo(x,y-R*.5);
+      c.moveTo(x-R*.42,y-R*.1);c.lineTo(x,y-R*.55);c.lineTo(x+R*.42,y-R*.1);c.stroke();
+      c.strokeStyle='rgba(110,220,200,.85)';c.lineWidth=1;
+      c.beginPath();c.arc(x,y,R,0,6.283);c.stroke();}
+    c.restore();},
   stop(){if(Bubble.raf){cancelAnimationFrame(Bubble.raf);Bubble.raf=null;}}
 };
 /* =====================================================================
