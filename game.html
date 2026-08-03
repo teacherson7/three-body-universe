@@ -416,12 +416,41 @@ const Snd={c:null,on:true,init(){if(!this.c)try{this.c=new(AudioContext||webkitA
     this.t(f,.09,'triangle',.055);setTimeout(()=>this.t(f*1.5,.15,'triangle',.05),75);},
   spGet(){[660,880,1175,1568].forEach((f,i)=>setTimeout(()=>this.t(f,.22,'triangle',.06),i*70));},
   spRainbow(){[523,659,784,988,1319].forEach((f,i)=>setTimeout(()=>this.t(f,.26,'triangle',.06),i*55));
-    setTimeout(()=>this.boom(2),240);},
-  spDrop(){this.t(1760,.1,'sine',.05,620);setTimeout(()=>this.t(2200,.18,'sine',.045,900),60);this.boom(2.2);},
-  spStrike(){this.t(70,.5,'sawtooth',.09,28);this.t(1200,.22,'square',.05,120);
-    setTimeout(()=>this.t(180,.4,'sawtooth',.07,40),90);},
+    setTimeout(()=>this.whoosh(),240);},
+  spDrop(){this.sft(1500,620,.12,.05,3600);setTimeout(()=>this.plop(),70);setTimeout(()=>this.plop(),190);},
+  spStrike(){this.sft(900,180,.36,.06,2000);
+    setTimeout(()=>this.sft(300,760,.28,.04,2200,'triangle'),90);},
   spCurve(){this.t(180,.4,'sine',.06,900);setTimeout(()=>this.t(320,.35,'triangle',.05,1400),120);},
   fanfare(){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.t(f,.35,'triangle',.07),i*150));},
+  /* ===== 버블 성단 전용 — 로우패스를 지나 둥글고 말랑한 소리만 낸다 ===== */
+  sft(f,to,d,g,lp,ty){if(!this.on||!this.c)return;const n=this.c.currentTime,
+    o=this.c.createOscillator(),v=this.c.createGain(),bq=this.c.createBiquadFilter();
+    bq.type='lowpass';bq.frequency.setValueAtTime(lp||2600,n);bq.Q.value=.8;
+    o.type=ty||'sine';o.frequency.setValueAtTime(f,n);
+    if(to&&to!==f)o.frequency.exponentialRampToValueAtTime(to,n+d);
+    v.gain.setValueAtTime(.0001,n);
+    v.gain.exponentialRampToValueAtTime(g,n+Math.min(.014,d*.22));
+    v.gain.exponentialRampToValueAtTime(.0001,n+d);
+    o.connect(bq);bq.connect(v);v.connect(this.c.destination);o.start(n);o.stop(n+d+.03);},
+  /* 또로롱 — 유리구슬이 굴러가듯 맑게 울린다. 연달아 부르면 5음 음계를 타고 올라간다 */
+  pon(i){const sc=[0,2,4,7,9,12,14,16,19,21],
+    f=660*Math.pow(2,sc[Math.min(i||0,9)]/12);
+    this.sft(f*2.4,f*1.02,.05,.032,8000);
+    this.sft(f,f,.36,.05,7000,'triangle');
+    setTimeout(()=>this.sft(f*2.99,f*2.99,.2,.013,9000),10);},
+  /* 퐁당 — 부유 성단이 떨어질 때 */
+  plop(){this.sft(280,880,.14,.05,2400);},
+  /* 톡 — 붙기만 하고 터지지 않았을 때 */
+  tap(){this.sft(340,250,.07,.03,1300);},
+  /* 맑은 종소리 — 연쇄가 쌓일수록 한 음씩 올라간다 */
+  chime(k){const f=523*Math.pow(1.1225,Math.min(k,10));
+    this.sft(f,f,.3,.045,5200,'triangle');
+    setTimeout(()=>this.sft(f*2,f*2,.24,.016,6200),45);},
+  /* 반짝 — 연쇄 고비를 넘겼을 때 */
+  sparkle(){[784,1047,1319].forEach((f,i)=>setTimeout(()=>this.sft(f,f,.24,.035,6000,'triangle'),i*55));},
+  /* 푸웅 — 특수 구슬이 크게 퍼질 때 (폭발음 대신 부드러운 팽창음) */
+  whoosh(){this.sft(160,520,.34,.055,1500);
+    setTimeout(()=>this.sft(420,180,.3,.035,1200),70);},
   doom(){[330,262,196,147,110].forEach((f,i)=>setTimeout(()=>this.t(f,.5,'sawtooth',.06),i*200));}};
 
 /* ---------- 배경 삼체 시뮬 ---------- */
@@ -552,9 +581,9 @@ const LEVELS=[
   {ord:'제 6 시대 · 르네상스',title:'코페르니쿠스의 각성',type:'quiz',fmt:'ch',qn:5,pass:3,
    story:'수백 대의 관측 끝에 진실의 문턱에 선다. 초성만 보고 원작의 핵심어를 떠올려라.',
    obj:'초성 퀴즈 5문제 중 3개 이상',item:{ic:'🔭',nm:'각성의 렌즈'},xp:110},
-  {ord:'제 7 시대 · 근대 과학',title:'삼체 문제의 증명',type:'bubble',colors:6,rows:5,dropEvery:7,
+  {ord:'제 7 시대 · 근대 과학',title:'삼체 문제의 증명',type:'bubble',colors:6,rows:5,dropEvery:9,
    story:'뉴턴과 아인슈타인의 방정식이 완성되어도 세 태양의 하늘은 답하지 않는다. 혼돈의 성단이 머리 위로 내려온다 — 같은 빛의 항성 셋을 모아 터뜨리고, 성단을 남김없이 해체해 증명을 완성하라.',
-   obj:'같은 색 항성 3개 이상을 맞춰 성단 전체를 해체하라 (7발마다 천장 하강)',item:{ic:'🎻',nm:'상대성의 활'},xp:150},
+   obj:'같은 색 항성 3개 이상을 맞춰 성단 전체를 해체하라 (9발마다 천장 하강)',item:{ic:'🎻',nm:'상대성의 활'},xp:150},
   {ord:'제 8 시대 · 오늘',title:'진실과 엑소더스',type:'quiz',fmt:'sa',qn:10,pass:6,
    story:'모든 시대를 지나 마침내 진실 앞에 섰다. 원작의 정수를 주관식으로 답하고, 문명의 마지막 결단을 목격하라.',
    obj:'주관식 10문제 중 6개 이상',item:{ic:'🚀',nm:'엑소더스의 별'},xp:160}
@@ -818,16 +847,25 @@ const Bubble={raf:null,last:0,
   pickFrom(g,nc){const present=[...new Set([...g.values()])];
     return present.length?present[Math.floor(Math.random()*present.length)]:Math.floor(Math.random()*nc);},
   /* --- 폭발 연출 --- */
-  burst(x,y,ci,cnt,pw){for(let i=0;i<cnt;i++){const a=Math.random()*6.283,sp=(45+Math.random()*240)*pw;
-    mgi.fx.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-50,r:1.2+Math.random()*3.4,ci,life:0,max:.42+Math.random()*.5});}},
-  ring(x,y,ci){mgi.rings.push({x,y,ci,life:0,max:.4});},
-  shakeAdd(v){mgi.shake=Math.min(15,mgi.shake+v);},
+  burst(x,y,ci,cnt,pw){for(let i=0;i<cnt;i++){const a=Math.random()*6.283,sp=(26+Math.random()*118)*pw;
+    mgi.fx.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-34,r:.9+Math.random()*2.4,ci,life:0,
+      max:.5+Math.random()*.55,gv:55+Math.random()*95});}},
+  ring(x,y,ci){mgi.rings.push({x,y,ci,life:0,max:.42});},
+  /* 퐁 — 비눗방울이 부풀었다 얇은 막만 남기고 사라지는 한 번의 연출 */
+  popFx(x,y,ci,i){if(!mgi||mgi.type!=='bubble')return;
+    mgi.pops.push({x,y,ci,life:0,max:.3});
+    Bubble.ring(x,y,ci);
+    Bubble.burst(x,y,ci,5+Math.floor(Math.random()*4),.8);
+    Bubble.shakeAdd(.7);Snd.pon(i);},
+  shakeAdd(v){mgi.shake=Math.min(6,mgi.shake+v);},
   stepFx(dt){const f=mgi.fx;
     for(let i=f.length-1;i>=0;i--){const q=f[i];q.life+=dt;
       if(q.life>=q.max){f.splice(i,1);continue;}
-      q.vy+=390*dt;q.vx*=.985;q.x+=q.vx*dt;q.y+=q.vy*dt;}
+      q.vy+=(q.gv||300)*dt;q.vx*=.955;q.vy*=.962;q.x+=q.vx*dt;q.y+=q.vy*dt;}
+    const po=mgi.pops;
+    for(let i=po.length-1;i>=0;i--){po[i].life+=dt;if(po[i].life>=po[i].max)po.splice(i,1);}
     const fl=mgi.falling;
-    for(let i=fl.length-1;i>=0;i--){const b=fl[i];b.life+=dt;b.vy+=780*dt;
+    for(let i=fl.length-1;i>=0;i--){const b=fl[i];b.life+=dt;b.vy+=560*dt;
       b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y>460)fl.splice(i,1);}
     const rg=mgi.rings;
     for(let i=rg.length-1;i>=0;i--){rg[i].life+=dt;if(rg[i].life>=rg[i].max)rg.splice(i,1);}
@@ -846,7 +884,7 @@ const Bubble={raf:null,last:0,
     const stars=[];for(let i=0;i<60;i++)stars.push([Math.random()*620,Math.random()*400,Math.random()*1.1+.3,Math.random()*.4+.15]);
     mgi={type:'bubble',cv,c,g,nc:L.colors,ceil:0,shots:0,dropEvery:L.dropEvery,
       cur:0,nxt:0,aim:{x:310,y:120},bullet:null,over:false,stars,
-      fx:[],falling:[],rings:[],beams:[],shake:0,combo:0,bestCombo:0,comboT:0,
+      fx:[],falling:[],rings:[],beams:[],pops:[],shake:0,combo:0,bestCombo:0,comboT:0,
       spGiven:0,spCool:0,
       swaps:Math.floor(stat('창의')/3),guide:70+stat('통찰')*14};
     mgi.cur=Bubble.pickFrom(g,L.colors);mgi.nxt=Bubble.pickFrom(g,L.colors);
@@ -904,21 +942,16 @@ const Bubble={raf:null,last:0,
         if(nr<0||nc2<0||nc2>=Bubble.colsIn(nr)||seen.has(k))continue;
         if(g.get(k)===col){seen.add(k);q.push([nr,nc2]);cl.push([nr,nc2]);}}}
     if(cl.length>=3){
-      const pw=Math.min(2.2,.85+cl.length*.12);
-      cl.forEach(p=>{const pp=Bubble.pos(p[0],p[1]);
-        Bubble.burst(pp.x,pp.y,col,7+Math.min(15,cl.length*2),pw);
-        Bubble.ring(pp.x,pp.y,col);
-        g.delete(Bubble.key(p[0],p[1]));});
+      Bubble.popWave(cl,col,Bubble.pos(r,c));
       mgi.combo++;if(mgi.combo>mgi.bestCombo)mgi.bestCombo=mgi.combo;
       mgi.comboT=1;
-      Bubble.shakeAdd(2.6+cl.length*.9);
-      Snd.boom(cl.length/3);Snd.combo(mgi.combo);
-      if(mgi.combo===3){flash('#e8b34a',.2);Bubble.shakeAdd(6);
-        floatText('3연쇄 — 항성 '+cl.length+'개 연쇄 붕괴!','#e8b34a');Snd.coin();}
-      else if(mgi.combo===5){flash('#ff7a5c',.26);Bubble.shakeAdd(9);
+      Snd.chime(mgi.combo);
+      if(mgi.combo===3){flash('#e8b34a',.1);Bubble.shakeAdd(1.6);
+        floatText('3연쇄 — 항성 '+cl.length+'개 연쇄 붕괴!','#e8b34a');Snd.sparkle();}
+      else if(mgi.combo===5){flash('#ffd76a',.13);Bubble.shakeAdd(2.2);
         floatText('5연쇄 — 성단이 무너진다!','#ff7a5c');Snd.fanfare();}
-      else if(mgi.combo>5){flash('#ff7a5c',.18);Bubble.shakeAdd(7);
-        floatText(mgi.combo+'연쇄 · '+cl.length+'개 해체!','#ff7a5c');Snd.coin();}
+      else if(mgi.combo>5){flash('#ffd76a',.09);Bubble.shakeAdd(1.8);
+        floatText(mgi.combo+'연쇄 · '+cl.length+'개 해체!','#ff7a5c');Snd.sparkle();}
       else floatText(cl.length+'개 해체!'+(mgi.combo>1?'  ×'+mgi.combo:''),'#6fce8f');
       /* 천장에 연결되지 않은 부유 성단 낙하 */
       const anchored=new Set(),q2=[];
@@ -932,12 +965,12 @@ const Bubble={raf:null,last:0,
         mgi.falling.push({x:pp.x,y:pp.y,vx:(Math.random()-.5)*80,vy:-70-Math.random()*100,
           ci:g.get(k),life:0});
         g.delete(k);drop++;}
-      if(drop){Snd.coin();Bubble.shakeAdd(3+drop*.5);
+      if(drop){Snd.plop();Bubble.shakeAdd(1+drop*.18);
         floatText('부유 성단 +'+drop+' 낙하!','#5aa9d6');}
       Bubble.grantSpecial(cl.length,drop);}
-    else {mgi.combo=0;mgi.comboT=0;Snd.click();}
+    else {mgi.combo=0;mgi.comboT=0;Snd.tap();}
     mgi.shots++;
-    if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.15);floatText('천장 하강!','#e8b34a');}
+    if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.1);floatText('천장 하강!','#e8b34a');}
     /* 승패 판정 */
     if(!g.size){mgi.over=true;Bubble.stop();floatText('성단 해체 — 증명 완료!','#6fce8f');
       setTimeout(()=>endMini(true),450);return;}
@@ -998,9 +1031,22 @@ const Bubble={raf:null,last:0,
       gr.addColorStop(1,'rgba('+cc2+',0)');
       c.fillStyle=gr;c.fillRect(0,bm.y-h,620,h*2);}
     for(const r of mgi.rings){const t=r.life/r.max;
-      c.strokeStyle='rgba('+RGB(r.ci)+','+((1-t)*.85).toFixed(3)+')';
-      c.lineWidth=3.2*(1-t)+.6;
-      c.beginPath();c.arc(r.x,r.y,7+t*32,0,6.283);c.stroke();}
+      c.strokeStyle='rgba('+RGB(r.ci)+','+((1-t)*.6).toFixed(3)+')';
+      c.lineWidth=2.1*(1-t)+.35;
+      c.beginPath();c.arc(r.x,r.y,9+t*26,0,6.283);c.stroke();
+      c.strokeStyle='rgba(255,255,255,'+((1-t)*.34).toFixed(3)+')';
+      c.lineWidth=1.1*(1-t)+.25;
+      c.beginPath();c.arc(r.x,r.y,6+t*17,0,6.283);c.stroke();}
+    /* 터지는 순간의 비눗방울 — 살짝 부풀었다가 막만 남기고 사라진다 */
+    for(const q of mgi.pops){const t=q.life/q.max,R=16*(1+t*.62),a=1-t;
+      c.strokeStyle='rgba('+RGB(q.ci)+','+(a*.75).toFixed(3)+')';
+      c.lineWidth=2.6*a+.3;
+      c.beginPath();c.arc(q.x,q.y,R,0,6.283);c.stroke();
+      c.fillStyle='rgba('+RGB(q.ci)+','+(a*a*.3).toFixed(3)+')';
+      c.beginPath();c.arc(q.x,q.y,R,0,6.283);c.fill();
+      c.strokeStyle='rgba(255,255,255,'+(a*.6).toFixed(3)+')';
+      c.lineWidth=1.6*a+.2;
+      c.beginPath();c.arc(q.x-R*.3,q.y-R*.32,R*.42,2.5,4.9);c.stroke();}
     for(const q of mgi.fx){const t=q.life/q.max;
       c.fillStyle='rgba('+RGB(q.ci)+','+(1-t).toFixed(3)+')';
       c.beginPath();c.arc(q.x,q.y,q.r*(1-t*.55),0,6.283);c.fill();}
@@ -1024,6 +1070,16 @@ const Bubble={raf:null,last:0,
     c.fillStyle=g2;c.beginPath();c.arc(x,y,R,0,6.283);c.fill();
     c.strokeStyle='rgba('+BUB_RGB[ci]+',.9)';c.lineWidth=1;c.stroke();},
   /* ===== 특수 구슬 ===== */
+  /* 맞은 자리에서 바깥쪽으로 34ms 간격으로 번지며 터진다 — 한 방의 폭발이 아니라 퐁·퐁·퐁 */
+  popWave(cl,col,hp){const g=mgi.g;
+    const ord=cl.map(p=>{const pp=Bubble.pos(p[0],p[1]);
+      return {p,pp,d:hp?(pp.x-hp.x)*(pp.x-hp.x)+(pp.y-hp.y)*(pp.y-hp.y):0};})
+      .sort((a,b)=>a.d-b.d);
+    ord.forEach((o,i)=>{const cc=(col===undefined?g.get(Bubble.key(o.p[0],o.p[1])):col);
+      g.delete(Bubble.key(o.p[0],o.p[1]));
+      const dly=Math.min(i,10)*46;
+      if(!dly)Bubble.popFx(o.pp.x,o.pp.y,cc,i);
+      else setTimeout(()=>Bubble.popFx(o.pp.x,o.pp.y,cc,i),dly);});},
   cluster(r,c,col){const g=mgi.g,seen=new Set([Bubble.key(r,c)]),q=[[r,c]],cl=[[r,c]];
     while(q.length){const cur=q.pop();
       for(const nb of Bubble.nbrs(cur[0],cur[1])){const nr=nb[0],nc2=nb[1],k=Bubble.key(nr,nc2);
@@ -1043,10 +1099,10 @@ const Bubble={raf:null,last:0,
       mgi.falling.push({x:pp.x,y:pp.y,vx:(Math.random()-.5)*80,vy:-70-Math.random()*100,
         ci:g.get(k),life:0});
       g.delete(k);drop++;}
-    if(drop){Snd.coin();Bubble.shakeAdd(3+drop*.5);
+    if(drop){Snd.plop();Bubble.shakeAdd(1+drop*.18);
       floatText('부유 성단 +'+drop+' 낙하!','#5aa9d6');}
     if(!noShot){mgi.shots++;
-      if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.15);floatText('천장 하강!','#e8b34a');}}
+      if(mgi.shots%mgi.dropEvery===0&&g.size){mgi.ceil++;flash('#c0392b',.1);floatText('천장 하강!','#e8b34a');}}
     if(!g.size){mgi.over=true;Bubble.stop();floatText('성단 해체 — 증명 완료!','#6fce8f');
       setTimeout(()=>endMini(true),450);return;}
     for(const k of g.keys()){const r2=Math.floor(k/100),p=Bubble.pos(r2,k%100);
@@ -1066,7 +1122,7 @@ const Bubble={raf:null,last:0,
                           :(Math.random()<.5?'droplet':'strike');
     else pick='rainbow';
     mgi.nxt=pick;mgi.spGiven++;mgi.spCool=6;
-    flash(SP[pick].c,.34);Bubble.shakeAdd(7);Snd.spGet();
+    flash(SP[pick].c,.2);Bubble.shakeAdd(2.6);Snd.spGet();
     floatText('특수 구슬 — '+SP[pick].n+' 획득!',SP[pick].c);},
   /* 무지개 항성: 이웃 색 중 가장 큰 성단을 골라 그 색이 된다 */
   useRainbow(r,c){const g=mgi.g,k=Bubble.key(r,c),p=Bubble.pos(r,c);
@@ -1075,18 +1131,16 @@ const Bubble={raf:null,last:0,
     let bc=null,bn=0;
     for(const col of cand){g.set(k,col);const n=Bubble.cluster(r,c,col).length;
       if(n>bn){bn=n;bc=col;}}
-    for(let i=0;i<6;i++)Bubble.burst(p.x,p.y,i,9,1.5);
-    Bubble.ring(p.x,p.y,'rainbow');flash('#ffd76a',.3);Bubble.shakeAdd(6);Snd.spRainbow();
+    for(let i=0;i<6;i++)Bubble.burst(p.x,p.y,i,6,.9);
+    Bubble.ring(p.x,p.y,'rainbow');flash('#ffd76a',.16);Bubble.shakeAdd(2.2);Snd.spRainbow();
     if(bc!==null&&bn>=3){g.set(k,bc);
       floatText('무지개 항성 — 색을 삼킨다!','#ffd76a');
       Bubble.resolve(r,c);return;}
     /* 삼킬 성단이 모자라면 스스로 초신성이 된다 — 헛방은 없다 */
-    g.delete(k);let n2=0;
-    for(const nb of Bubble.nbrs(r,c)){const kk=Bubble.key(nb[0],nb[1]);
-      if(g.has(kk)){const pp=Bubble.pos(nb[0],nb[1]);
-        Bubble.burst(pp.x,pp.y,g.get(kk),14,1.8);Bubble.ring(pp.x,pp.y,g.get(kk));
-        g.delete(kk);n2++;}}
-    Bubble.shakeAdd(9);Snd.boom(2.4);
+    g.delete(k);
+    const nbl=Bubble.nbrs(r,c).filter(nb=>g.has(Bubble.key(nb[0],nb[1])));
+    const n2=nbl.length;Bubble.popWave(nbl,undefined,p);
+    Bubble.shakeAdd(2.6);Snd.whoosh();
     floatText('무지개 항성 초신성 — '+n2+'개 증발!','#ffd76a');
     Bubble.after();},
   /* 물방울: 붙지 않고 지나간 자리를 전부 지운다 */
@@ -1097,10 +1151,9 @@ const Bubble={raf:null,last:0,
       vy:40+Math.random()*50,r:1.3+Math.random()*2.3,ci:'droplet',life:0,max:.34});
     for(const k of [...g.keys()]){const r=Math.floor(k/100),p=Bubble.pos(r,k%100);
       const d2=(p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y);
-      if(d2<26*26){Bubble.burst(p.x,p.y,g.get(k),15,1.9);Bubble.ring(p.x,p.y,g.get(k));
-        g.delete(k);b.pier++;Bubble.shakeAdd(2.4);}}
+      if(d2<26*26){Bubble.popFx(p.x,p.y,g.get(k),b.pier);g.delete(k);b.pier++;}}
     if(b.y<-24||b.y>440){mgi.bullet=null;
-      flash('#dfecf5',.3);Bubble.shakeAdd(8);Snd.spDrop();
+      flash('#dfecf5',.16);Bubble.shakeAdd(2.4);Snd.spDrop();
       floatText('물방울 — 성단을 '+b.pier+'개 꿰뚫었다!','#dfecf5');
       Bubble.after();return true;}
     return false;},
@@ -1111,17 +1164,15 @@ const Bubble={raf:null,last:0,
       for(const k of g.keys()){const rr=Math.floor(k/100),dy=Math.abs(Bubble.pos(rr,0).y-b.y);
         if(dy<bd){bd=dy;br=rr;}}
       mgi.beams.push({y:Bubble.pos(br,0).y,life:0,max:.55});
-      let n=0;for(const k of [...g.keys()])if(Math.floor(k/100)===br){
-        const p=Bubble.pos(br,k%100);
-        Bubble.burst(p.x,p.y,g.get(k),16,2);Bubble.ring(p.x,p.y,g.get(k));
-        g.delete(k);n++;}
-      flash('#c496ff',.34);Bubble.shakeAdd(15);Snd.spStrike();
+      const row=[...g.keys()].filter(k=>Math.floor(k/100)===br).map(k=>[br,k%100]);
+      const n=row.length;Bubble.popWave(row,undefined,{x:b.x,y:b.y});
+      flash('#c496ff',.19);Bubble.shakeAdd(3.2);Snd.spStrike();
       floatText('차원 타격 — 한 줄이 이차원으로 눌렸다 ('+n+'개)','#c496ff');
       Bubble.after();return;}
     if(b.col==='curve'){
       if(mgi.ceil>0){mgi.ceil--;
         mgi.beams.push({y:56+mgi.ceil*28-18,life:0,max:.6,up:true});
-        flash('#6edcc8',.3);Bubble.shakeAdd(11);Snd.spCurve();
+        flash('#6edcc8',.17);Bubble.shakeAdd(2.8);Snd.spCurve();
         floatText('곡률 추진 — 천장을 한 칸 밀어 올렸다!','#6edcc8');
         Bubble.after(true);return;}
       let bk=null,bd=1e9;
@@ -1129,13 +1180,10 @@ const Bubble={raf:null,last:0,
         const d2=(p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y);if(d2<bd){bd=d2;bk=k;}}
       let n=0;
       if(bk!==null){const rr=Math.floor(bk/100),cc=bk%100;
-        for(const p2 of [[rr,cc]].concat(Bubble.nbrs(rr,cc))){
-          const kk=Bubble.key(p2[0],p2[1]);
-          if(g.has(kk)){const pp=Bubble.pos(p2[0],p2[1]);
-            Bubble.burst(pp.x,pp.y,g.get(kk),14,1.7);Bubble.ring(pp.x,pp.y,g.get(kk));
-            g.delete(kk);n++;}}}
+        const grp=[[rr,cc]].concat(Bubble.nbrs(rr,cc)).filter(p2=>g.has(Bubble.key(p2[0],p2[1])));
+        n=grp.length;Bubble.popWave(grp,undefined,{x:b.x,y:b.y});}
       mgi.beams.push({y:b.y,life:0,max:.5,up:true});
-      flash('#6edcc8',.28);Bubble.shakeAdd(11);Snd.spCurve();
+      flash('#6edcc8',.17);Bubble.shakeAdd(2.8);Snd.spCurve();
       floatText('곡률 추진 — 공간을 접어 '+n+'개를 밀어냈다!','#6edcc8');
       Bubble.after();return;}
     Bubble.after();},
